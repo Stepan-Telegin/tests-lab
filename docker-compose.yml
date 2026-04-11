@@ -17,3 +17,12 @@ services:
     working_dir: /app
     expose:
       - "9000"
+
+  phpunit:
+    image: composer:2
+    volumes:
+      - ./:/app
+    working_dir: /app
+    entrypoint: ["php"]
+    depends_on:
+      - nginx
