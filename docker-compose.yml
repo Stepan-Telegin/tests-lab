@@ -18,11 +18,17 @@ services:
     expose:
       - "9000"
 
-  phpunit:
+  composer:
     image: composer:2
+    working_dir: /app
     volumes:
       - ./:/app
+
+  phpunit:
+    image: composer:2
     working_dir: /app
-    entrypoint: ["php"]
+    volumes:
+      - ./:/app
+    entrypoint: ["php", "vendor/bin/phpunit"]
     depends_on:
       - nginx
