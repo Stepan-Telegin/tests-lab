@@ -2,5 +2,8 @@
     "name": "root/app",
     "require-dev": {
         "phpunit/phpunit": "^13.1"
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.10"
     }
 }
