@@ -1,4 +1,4 @@
-# Лабораторная работа №8: Тестирование PHP-приложения с использованием PHPUnit и Guzzle
+# Лабораторная работа №9: CI/CD для PHP-приложения с использованием GitHub Actions и Docker
 
 ## 👩‍💻 Автор
 ФИО: Телегин Степан Сергеевич
@@ -8,7 +8,7 @@
 ---
 
 ## 📌 Описание задания
-Цель работы: научиться устанавливать и использовать PHPUnit, писать unit-тесты для классов, использовать mock-объекты, тестировать HTTP-запросы через Guzzle, работать с переменными окружения (.env) и изолировать тестовую среду.
+Цель работы: настроить CI/CD pipeline в GitHub Actions для PHP-проекта в Docker, автоматически устанавливать зависимости Composer и запускать тесты PHPUnit, а также продемонстрировать падение pipeline при ошибке в тестах.
 
 ---
 
@@ -16,11 +16,11 @@
 
 1. Клонировать репозиторий:
    ```bash
-   git clone https://github.com/Stepan-Telegin/nginx-lab
+   git clone https://github.com/Stepan-Telegin/tests-lab
    cd tests-lab
    ```
 
-2. Создать файл окружения для тестов `.env.test` (в репозитории он не хранится):
+2. (Локально) Создать файл окружения для тестов `.env.test` (в репозитории он не хранится):
    - создать рядом с `composer.json` файл `.env.test`, например с таким содержанием:
    ```env
    DB_HOST=db
@@ -29,54 +29,58 @@
    DB_PASSWORD=test_pass
    ```
 
-3. Запустить контейнеры:
+3. Поднять Docker-контейнеры:
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
 
-4. Установить зависимости Composer:
+4. Установить зависимости Composer (внутри контейнера `php`):
    ```bash
-   docker compose run --rm composer install
+   docker compose exec -T php composer install
    ```
 
-5. Запустить все тесты PHPUnit:
+5. Запустить тесты PHPUnit:
    ```bash
-   docker compose run --rm phpunit
+   docker compose exec -T php vendor/bin/phpunit tests
    ```
-   Внутри контейнера выполняется команда `php vendor/bin/phpunit`.
+
+---
+
+## ✅ CI/CD (GitHub Actions)
+
+Workflow находится в файле:
+- `.github/workflows/ci.yml`
+
+Pipeline выполняет:
+- запуск контейнеров `docker compose up -d --build`
+- `composer install`
+- запуск тестов `vendor/bin/phpunit tests`
+- остановку контейнеров `docker compose down`
+
+Проверка в GitHub:
+- вкладка **Actions** → workflow **PHP docker CI**
+- есть успешный запуск (зелёный)
+- есть запуск с ошибкой при сломанном тесте (красный)
+- после исправления теста pipeline снова проходит (зелёный)
 
 ---
 
 ## 📂 Содержимое проекта
 
-```nginx/default.conf``` — конфигурация Nginx для работы с PHP-FPM
+`Dockerfile` — образ PHP (установка расширений, composer для CI)
 
-```docker-compose.yml``` — сервисы `nginx`, `php`, а также сервисы `composer` и `phpunit` для установки зависимостей и запуска тестов
+`docker-compose.yml` — сервисы `nginx` и `php` для запуска проекта и тестов
 
-```www/index.php``` — тестовая страница (возвращает 200 OK)
+`.github/workflows/ci.yml` — CI pipeline (GitHub Actions)
 
-```www/Registration.php``` — класс (из прошлых лабораторных) для примера unit-тестирования
+`tests/` — тесты PHPUnit (unit-тесты, mock, HTTP-тест через Guzzle)
 
-```tests/ExampleTest.php``` — первый тест PHPUnit (проверка установки/запуска)
-
-```tests/RegistrationTest.php``` — unit-тесты класса `Registration` (в т.ч. с mock PDO) и `setUp()`
-
-```tests/ApiTest.php``` — HTTP-тест через Guzzle (реальный запрос к `http://nginx/index.php`)
-
-```tests/ApiMockTest.php``` — mock HTTP-тест через Guzzle `MockHandler` (без реального запроса)
-
-```tests/bootstrap.php``` — загрузка переменных окружения из `.env.test` в `$_ENV`
-
-```phpunit.xml``` — конфигурация PHPUnit (подключает bootstrap)
-
-```composer.json``` — зависимости проекта (phpunit + guzzle)
+`composer.json` — зависимости (phpunit + guzzle)
 
 ---
 
 ## ✅ Результат
-Добавлены тесты PHPUnit:
-- 2 unit-теста для класса: `tests/RegistrationTest.php` (`testAdd`, `testGetAll`) из варианта 15 из прошлых лаб.
-- 1 тест с mock: в `tests/RegistrationTest.php` используется mock `PDO` и `PDOStatement`.
-- 1 HTTP тест через Guzzle: `tests/ApiTest.php` делает запрос к `http://nginx/index.php`.
-- Проверка добавления данных: `RegistrationTest::testAdd()`.
-- Проверка получения данных: `RegistrationTest::testGetAll()`.
+- Настроен CI/CD pipeline в GitHub Actions (`.github/workflows/ci.yml`)
+- Добавлен запуск `composer install` и `vendor/bin/phpunit tests` в CI
+- Pipeline успешно выполняется (зелёный статус)
+- На скринах в папке screenshots_for_lab_9 продемонстрировано падение pipeline при ошибке в тесте (красный статус), затем исправление и повторный зелёный запуск
