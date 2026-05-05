@@ -10,25 +10,10 @@ services:
       - php
 
   php:
-    image: php:8.2-fpm
+    build: .
     volumes:
       - ./www:/var/www/html
       - ./:/app
     working_dir: /app
     expose:
       - "9000"
-
-  composer:
-    image: composer:2
-    working_dir: /app
-    volumes:
-      - ./:/app
-
-  phpunit:
-    image: composer:2
-    working_dir: /app
-    volumes:
-      - ./:/app
-    entrypoint: ["php", "vendor/bin/phpunit"]
-    depends_on:
-      - nginx
